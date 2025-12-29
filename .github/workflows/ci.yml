@@ -19,19 +19,39 @@ jobs:
           until pg_isready -h localhost -p 5432 -U test; do sleep 2; done
 
       # ---------- backend ----------
-      - name: Backend setup
+      - name: Backend setup & lint
         run: |
           cd backend
           python -m venv .venv
           source .venv/bin/activate
           pip install -r requirements.txt
+          if [ -n "$(find . -name '*.py' -not -path './.venv/*' -not -path './venv/*')" ]; then
+            echo "Running Ruff check..."
+            ruff check .
+            echo "Running Black format check..."
+            black --check .
+            echo "Running MyPy type check..."
+            mypy .
+          else
+            echo "No Python files found, skipping lint checks"
+          fi
+
+      - name: Backend test
+        run: |
+          cd backend
+          source .venv/bin/activate
           pytest
 
       # ---------- frontend ----------
-      - name: Frontend setup
+      - name: Frontend setup & lint
         run: |
           cd frontend
           npm ci
+          npm run lint
+
+      - name: Frontend test
+        run: |
+          cd frontend
           npm run test
 
       # ---------- e2e ----------
