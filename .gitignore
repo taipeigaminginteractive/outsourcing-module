@@ -23,6 +23,7 @@ wheels/
 
 # Virtual Environment
 .venv/
+backend/.venv/
 
 # scripts
 scripts/
@@ -56,10 +57,10 @@ frontend/node_modules
 frontend/.pnp
 frontend/.pnp.*
 frontend/.yarn/*
-frontend/.yarn/patches
-frontend/.yarn/plugins
-frontend/.yarn/releases
-frontend/.yarn/versions
+!frontend/.yarn/patches
+!frontend/.yarn/plugins
+!frontend/.yarn/releases
+!frontend/.yarn/versions
 
 ## testing
 frontend/coverage
@@ -75,17 +76,14 @@ frontend/out/
 ## production
 frontend/build
 
-
 ## debug
 frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
 frontend/.pnpm-debug.log*
 
-## env files 
-.env*
-
 ## env files (can opt-in for committing if needed)
+.env*
 frontend/.env*
 
 ## vercel
