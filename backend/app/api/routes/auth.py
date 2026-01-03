@@ -16,11 +16,11 @@
 # - 同一模組的多個 import 可以合併在同一行
 # ============================================
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 
 from app.core import token_auth_logic
-from app.core.errors import UserAlreadyExistsError, app_error_to_http_exception
-from app.core.logging import get_logger, log_error
+from app.core import errors
+from app.core.logging import get_logger
 from app.schemas import user_schema
 from app.services import user_service
 from app.utils import mailer
@@ -47,12 +47,7 @@ async def register(user_data: user_schema.AuthRegisterRequest):
     """
     try:
         create_dto = user_schema.UserCreateDTO.from_request(user_data)
-        
-        logger.info(
-            f"用戶註冊請求: username={user_data.username}, email={user_data.email}",
-            extra={"function": "register", "username": user_data.username, "email": user_data.email}
-        )
-        
+                
         # 存入DB時 檢驗帳號是否已存在
         user = await user_service.create_user(create_dto) 
         
@@ -71,47 +66,36 @@ async def register(user_data: user_schema.AuthRegisterRequest):
         )
         
         logger.info(
-            f"用戶註冊成功: user_id={user.id}, username={user.username}",
-            extra={"function": "register", "user_id": user.id, "username": user.username}
+            "用戶註冊成功並已發送驗證信",
+            extra={"user_id": user.id, "username": user.username}
         )
         
         return user_schema.UserResponse.model_validate(user)
-    except UserAlreadyExistsError as e:
-        # 處理用戶已存在的錯誤
-        # 策略：從已被註冊的帳戶中挑出未完成註冊流程的用戶(允許重新發送驗證信)
-        # 其他已完全註冊的用戶則返回錯誤
+    except errors.UserAlreadyExistsError as e:
+        # @errorhandler：
+        # 從已被註冊的帳戶中 挑出未完成註冊流程的用戶 -> 重新發送驗證信
+        # 其他已完全註冊的用戶 -> 返回結構性錯誤
+
         field = e.detail.get("field", "")
         
         logger.warning(
-            f"用戶已存在錯誤: field={field}, username={user_data.username}, email={user_data.email}",
+            "用戶已存在錯誤",
             extra={
-                "function": "register",
                 "error_code": e.code,
                 "conflict_field": field,
                 "username": user_data.username,
                 "email": user_data.email,
-            }
+            },
         )
         
         # 只有郵箱衝突時才檢查是否可以重新發送驗證信
-        # 用戶名衝突直接返回錯誤(因為用戶名是唯一標識)
         if field == "email":
             existing_user = await user_service.get_user_by_email(user_data.email)
 
             if existing_user:
                 # 用戶已存在但未完成註冊流程(未驗證或已驗證但未設置密碼)
-                # 允許重新發送驗證信，不返回錯誤
                 if not existing_user.is_verified or (existing_user.is_verified and not existing_user.hashed_password):
-                    logger.info(
-                        f"重新發送驗證信給未完成註冊的用戶: user_id={existing_user.id}, username={existing_user.username}",
-                        extra={
-                            "function": "register",
-                            "user_id": existing_user.id,
-                            "username": existing_user.username,
-                            "is_verified": existing_user.is_verified,
-                            "has_password": bool(existing_user.hashed_password),
-                        }
-                    )
+
                     
                     verification_token, _ = token_auth_logic.create_token(
                         existing_user.username,
@@ -124,21 +108,19 @@ async def register(user_data: user_schema.AuthRegisterRequest):
                         username=existing_user.username,
                         verification_token=verification_token
                     )
+
+                    logger.info(
+                        "重新發送驗證信給未完成註冊的用戶",
+                        extra={
+                            "user_id": existing_user.id,
+                            "username": existing_user.username,
+                            "is_verified": existing_user.is_verified,
+                            "has_password": bool(existing_user.hashed_password),
+                        }
+                    )
                     
                     # 返回用戶信息(但不透露這是已存在的用戶，保持安全性)
                     return user_schema.UserResponse.model_validate(existing_user)
         
         # 用戶名已存在，或郵箱已存在且用戶已完全註冊，返回結構化錯誤
-        raise app_error_to_http_exception(e)
-    except Exception as e:
-        # 記錄未預期的錯誤
-        log_error(
-            logger=logger,
-            error=e,
-            context={
-                "function": "register",
-                "username": user_data.username,
-                "email": user_data.email,
-            }
-        )
-        raise
+        raise errors.app_error_to_http_exception(e)

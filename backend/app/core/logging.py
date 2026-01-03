@@ -10,32 +10,42 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-# 日誌目錄
-LOG_DIR = Path(__file__).resolve().parent.parent.parent / "logs"
-LOG_DIR.mkdir(exist_ok=True)
+from settings import settings
 
-# 日誌文件路徑
-LOG_FILE = LOG_DIR / "app.log"
-ERROR_LOG_FILE = LOG_DIR / "error.log"
+# logging使用時 確保日誌目錄存在
+settings.LOG_DIR.mkdir(exist_ok=True, parents=True)
 
+# LogRecord 的標準欄位(避免把內建欄位也當成 extra 輸出)
+_STANDARD_LOGRECORD_ATTRS = set(
+    logging.LogRecord(
+        name="",
+        level=0,
+        pathname="",
+        lineno=0,
+        msg="",
+        args=(),
+        exc_info=None,
+    ).__dict__.keys()
+)
 
 class StructuredFormatter(logging.Formatter):
     """結構化日誌格式化器
     
     範例輸出格式:
     
-    INFO 基礎格式:
-        [2024-01-01 12:00:00] INFO     app.api.routes.auth:register:51 - 用戶註冊請求: username=testuser, email=test@example.com
-    
-    (ERROR)包含錯誤碼和狀態碼:
+    INFO/ WARNING 基礎格式 包含 extra 欄位:
+        [2024-01-01 12:00:00] INFO     app.api.routes.auth:register:51 - 用戶註冊請求 | username=testuser | email=test@example.com
+        [2024-01-01 12:00:00] WARNING  app.api.routes.auth:register:70 - 用戶已存在錯誤 | code=AUTH.USER.DUPLICATE_CREDENTIAL | conflict_field=email | email=test@example.com | username=testuser
+
+    ERROR 包含錯誤碼和狀態碼( 使用 detail 欄位):
         [2024-01-01 12:00:00] ERROR    app.core.errors:app_error_to_http_exception:65 - UserAlreadyExistsError: User already exists | code=AUTH.USER.DUPLICATE_CREDENTIAL | status=409 | detail={'field': 'username'}
-    
-    (WARNING)包含上下文資訊:
-        [2024-01-01 12:00:00] WARNING  app.api.routes.auth:register:70 - 用戶已存在錯誤: field=email, username=testuser, email=test@example.com | context={'function': 'register', 'error_code': 'AUTH.USER.DUPLICATE_CREDENTIAL', 'conflict_field': 'email'}
     """
     
     def format(self, record: logging.LogRecord) -> str:
-        # 基礎格式（使用預設的 asctime）
+        # 自行補上 record.asctime，避免被覆蓋而不存在
+        record.asctime = self.formatTime(record, self.datefmt)
+
+        # 基礎格式
         log_format = (
             f"[{record.asctime}] "
             f"{record.levelname:8s} "
@@ -43,13 +53,28 @@ class StructuredFormatter(logging.Formatter):
             f"{record.getMessage()}"
         )
         
-        # 添加額外資訊
+        # 添加額外資訊 (for error log)
         if hasattr(record, "error_code"):
             log_format += f" | code={record.error_code}"
         if hasattr(record, "status_code"):
             log_format += f" | status={record.status_code}"
         if hasattr(record, "detail"):
             log_format += f" | detail={record.detail}"
+
+        # 輸出所有自定義 extra 欄位（排除標準 LogRecord 欄位與已特別處理的欄位）
+        handled_keys = {"error_code", "status_code", "detail", "asctime"}
+        extra_keys = [
+            key
+            for key in record.__dict__.keys()
+            if key not in _STANDARD_LOGRECORD_ATTRS and key not in handled_keys
+        ]
+        for key in sorted(extra_keys):
+            try:
+                value = record.__dict__.get(key)
+                log_format += f" | {key}={value}"
+            except Exception:
+                # 避免 __str__ / __repr__ 異常導致 logging 本身失敗
+                log_format += f" | {key}=<unprintable>"
         
         return log_format
 
@@ -75,13 +100,13 @@ def setup_logging(
     
     # 文件處理器 - 所有日誌
     if log_to_file:
-        file_handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
+        file_handler = logging.FileHandler(settings.LOG_FILE, encoding="utf-8")
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(StructuredFormatter())
         root_logger.addHandler(file_handler)
         
         # 錯誤日誌文件處理器 - 只記錄 ERROR 及以上級別
-        error_file_handler = logging.FileHandler(ERROR_LOG_FILE, encoding="utf-8")
+        error_file_handler = logging.FileHandler(settings.ERROR_LOG_FILE, encoding="utf-8")
         error_file_handler.setLevel(logging.ERROR)
         error_file_handler.setFormatter(StructuredFormatter())
         root_logger.addHandler(error_file_handler)
@@ -114,7 +139,7 @@ def log_error(
     detail: Optional[dict] = None,
     context: Optional[dict] = None,
 ) -> None:
-    """記錄錯誤日誌
+    """記錄錯誤日誌 封裝 Logger.error() 方法
     
     Args:
         logger: 日誌記錄器
@@ -144,7 +169,7 @@ def log_app_error(
     error: "AppError",  # type: ignore
     context: Optional[dict] = None,
 ) -> None:
-    """記錄 AppError 錯誤日誌
+    """記錄 AppError 錯誤日誌 封裝 log_error() 方法
     
     Args:
         logger: 日誌記錄器
