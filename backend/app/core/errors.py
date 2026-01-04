@@ -49,6 +49,7 @@ def app_error_to_http_exception(
     
     Returns:
         HTTPException: 包含結構化錯誤資訊的 HTTP 異常
+            - detail: 結構化錯誤資訊 包含 code 和 message
             - 根據 include_fields 決定是否包含 detail
     """
     # 記錄錯誤日誌

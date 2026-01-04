@@ -41,9 +41,13 @@ async def register(user_data: user_schema.AuthRegisterRequest):
     """註冊信箱(先驗證郵箱，驗證成功後再設置密碼)
     
     Raises:
-        HTTPException: 
-            - 409: 當用戶名已存在時
-            - 409: 當郵箱已存在且用戶已完全註冊(已驗證且已設置密碼)時
+        HTTPException 業務邏輯錯誤:
+            - 409: username 已存在
+            - 409: email 已存在且該用戶已完成註冊（已驗證且已設置密碼）
+
+    Note:
+        - 若 email 已存在但用戶尚未完成註冊（未驗證或已驗證但未設置密碼），
+            會重新發送驗證信並回傳該用戶資訊（不會拋出 409）
     """
     try:
         create_dto = user_schema.UserCreateDTO.from_request(user_data)
