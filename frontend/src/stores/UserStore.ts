@@ -50,8 +50,6 @@ export const useUserStore = create<UserState>()(
           console.log("註冊成功，請檢查您的信箱以完成驗證");
         } catch (error) {
           console.error("註冊失敗:", error);
-
-          // authApi 已經處理了網絡錯誤，直接使用錯誤訊息
           const errorMessage =
             error instanceof Error ? error.message : "註冊失敗";
           set({
@@ -63,14 +61,10 @@ export const useUserStore = create<UserState>()(
       },
 
       redirectToOAuthLogin: async (
-        provider: "google" | "facebook" | "line",
-        errorType?: "login" | "register"
+        provider: "google" | "facebook" | "line"
       ): Promise<void> => {
         try {
-          // 根據錯誤類型清除相應的錯誤狀態
-          if (errorType === "register") {
-            set({ registerError: null });
-          }
+          set({ registerError: null });
 
           await authApi.redirectToOAuthLogin(provider);
         } catch (error) {
@@ -80,11 +74,8 @@ export const useUserStore = create<UserState>()(
             error instanceof Error
               ? error.message
               : `${provider} 註冊失敗，請稍後再試`;
-
-          // 根據錯誤類型設置相應的錯誤狀態
-          if (errorType === "register") {
-            set({ registerError: errorMessage });
-          }
+          
+          set({ registerError: errorMessage });
 
           throw error;
         }

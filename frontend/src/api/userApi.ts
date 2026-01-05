@@ -1,12 +1,9 @@
+
+
 // ----------------------------------------------------
-// 用戶資料管理 API - 專注於用戶資料管理功能
+// 匹配後端 user API 相關 schemas
 // ----------------------------------------------------
 
-// ============================================
-// 用戶相關類型定義
-// ============================================
-
-// UserResponse 就是 獲取用戶資料的響應格式 (UserGetResponse)
 export interface UserResponse {
   id: number;
   username: string;
@@ -22,7 +19,7 @@ export interface UserResponse {
   oauth_accounts?: OAuthAccountResponse[];
 }
 
-// OAuth 帳號響應格式
+
 export interface OAuthAccountResponse {
   id: number;
   provider: string;
@@ -34,7 +31,7 @@ export interface OAuthAccountResponse {
 }
 
 // ----------------------------------------------------
-// 用戶資料管理 API - 註冊流程不需要用戶 API
+// 用戶資料管理 API - 專注於用戶資料管理功能
 // ----------------------------------------------------
 export const userApi = {
   // 註冊流程不需要用戶 API
