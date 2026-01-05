@@ -16,7 +16,10 @@
 # - 同一模組的多個 import 可以合併在同一行
 # ============================================
 
-from fastapi import APIRouter, status
+import secrets
+from urllib.parse import urlencode
+
+from fastapi import APIRouter, HTTPException, status
 
 from app.core import token_auth_logic
 from app.core import errors
@@ -29,6 +32,12 @@ from settings import settings
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+
+# settings 的設定值
+OAUTH_PROVIDERS = settings.OAUTH_PROVIDERS
+BACKEND_URL = settings.BACKEND_URL
+FRONTEND_URL = settings.FRONTEND_URL
+
 # 設定 JWT token 過期時間
 EMAIL_VERIFICATION_EXPIRE_MINUTES = settings.EMAIL_VERIFICATION_EXPIRE_MINUTES # 24 小時 (信箱驗證)
 
@@ -41,9 +50,9 @@ async def register(user_data: user_schema.AuthRegisterRequest):
     """註冊信箱(先驗證郵箱，驗證成功後再設置密碼)
     
     Raises:
-        HTTPException 業務邏輯錯誤:
+        業務邏輯錯誤(HTTPException) :
             - 409: username 已存在
-            - 409: email 已存在且該用戶已完成註冊（已驗證且已設置密碼）
+            - 409: email 已存在 且 該用戶已完成註冊（已驗證且已設置密碼）
 
     Note:
         - 若 email 已存在但用戶尚未完成註冊（未驗證或已驗證但未設置密碼），
@@ -128,3 +137,107 @@ async def register(user_data: user_schema.AuthRegisterRequest):
         
         # 用戶名已存在，或郵箱已存在且用戶已完全註冊，返回結構化錯誤
         raise errors.app_error_to_http_exception(e)
+
+@router.post("/get-email-verification-token", response_model=user_schema.GetEmailVerificationTokenResponse)
+async def get_email_verification_token(
+    token_data: user_schema.GetEmailVerificationTokenRequest
+):
+    """獲取郵箱驗證 token（避免 email 暴露在 URL）
+    
+    Raises:
+        業務邏輯錯誤(HTTPException) :
+            - 404: 用戶不存在（為了安全，不透露用戶是否存在）
+            - 400: 信箱已經驗證過了（已驗證且已設置密碼）
+            - 500: 獲取驗證 token 失敗
+
+    Note:
+        - 若用戶已驗證但未設置密碼，允許重新獲取驗證 token
+    """
+    try:
+        email = token_data.email
+        
+        # 查找用戶
+        user = await user_service.get_user_by_email(email)
+        if not user:
+            # 為了安全，不透露用戶是否存在
+            raise errors.app_error_to_http_exception(
+                errors.UserNotFoundError()
+            )
+        
+        # 檢查是否已驗證且已設置密碼（如果已驗證但未設置密碼，允許重新獲取驗證token）
+        if user.is_verified and user.hashed_password:
+            raise errors.app_error_to_http_exception(
+                errors.UserAlreadyVerifiedError()
+            )
+        
+        # 生成用於獲取 email 的 token（有效期 30 分鐘）
+        email_token, _ = token_auth_logic.create_token(
+            user.username,
+            "email_verification_token",  # 特殊類型，用於獲取 email
+            30  # 30 分鐘有效期
+        )
+        
+        return user_schema.GetEmailVerificationTokenResponse(
+            token=email_token,
+            message="驗證 token 已生成"
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            "獲取驗證 token 時發生未預期錯誤",
+            extra={"email": email, "error": str(e)},
+            exc_info=True
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "code": "AUTH.TOKEN.GENERATION_FAILED",
+                "message": "Failed to generate verification token"
+            }
+        )
+
+
+@router.get("/oauth/{provider}/url")
+async def get_oauth_url(provider: str, redirect_uri: str = None):
+    """獲取 OAuth 授權 URL（第一步：將用戶導向 provider 的 OAuth 授權頁面）
+    
+    Raises:
+        業務邏輯錯誤(HTTPException) :
+            - 400: 不支援的 OAuth 提供商
+            - 503: OAuth 未配置（provider 的 client_id 未設置）
+
+    Note:
+        - 如果沒有提供 redirect_uri，將使用後端的回調 URL
+        - 返回的 auth_url 包含所有必要的 OAuth 參數
+    """
+    if provider not in OAUTH_PROVIDERS:
+        raise errors.app_error_to_http_exception(
+            errors.OAuthProviderNotSupportedError(provider)
+        )
+    
+    config = OAUTH_PROVIDERS[provider]
+    if not config["client_id"]:
+        raise errors.app_error_to_http_exception(
+            errors.OAuthNotConfiguredError(provider),
+            include_fields=["provider"]
+        )
+    
+    # 如果沒有提供 redirect_uri，使用後端的回調 URL (一般不用)
+    if not redirect_uri:
+        redirect_uri = f"{BACKEND_URL}/auth/oauth/{provider}/callback"
+    
+    # redirect_uri 也作為參數 拼接到 auth_url 後面
+    # 用途: 在 provider 完成授權後 重定向到 指定的 URL
+    params = {
+        "client_id": config["client_id"],
+        "redirect_uri": redirect_uri,
+        "scope": config["scope"],
+        "response_type": "code",
+        "state": f"{provider}_{secrets.token_hex(16)}"
+    }
+    
+    # 所有參數 都拼接到 auth_url 後面 形成完整的 OAuth 授權 URL
+    auth_url = f"{config['auth_url']}?{urlencode(params)}"
+    return user_schema.OAuthAuthUrlResponse(auth_url=auth_url)

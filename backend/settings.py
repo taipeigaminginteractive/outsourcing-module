@@ -23,4 +23,18 @@ class Settings(BaseSettings):
     LOG_FILE: Path = BASE_DIR / "logs" / "app.log"
     ERROR_LOG_FILE: Path = BASE_DIR / "logs" / "error.log"
 
+    # OAuth Providers
+    OAUTH_PROVIDERS: List[str] = ["google", "facebook", "line"]
+
+    # Backend and Frontend URLs
+    BACKEND_URL: str = "http://localhost:8000"
+    FRONTEND_URL: str = "http://localhost:3000"
+
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "case_sensitive": False,
+        "extra": "ignore"  # 允許忽略未定義的環境變數
+    }
+
 settings = Settings()

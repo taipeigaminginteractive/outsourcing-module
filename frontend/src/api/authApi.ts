@@ -1,5 +1,4 @@
 import { API_BASE_URL } from "@/constants";
-import { tokenManager } from "@/lib/token_auth";
 import {
   handleApiError,
   handleValidationError,
@@ -37,16 +36,23 @@ export interface OAuthLoginResponse {
 }
 
 // ----------------------------------------------------
-// 身份驗證 API - 專注於註冊相關功能
+// 身份驗證 auth API
 // ----------------------------------------------------
 export const authApi = {
+
+  // ===========================================
+  // 信箱驗證相關功能
+  // ===========================================
   /**
-  * POST /auth/register (AuthRegisterRequest -> UserResponse)
+  * POST /auth/register
   * 註冊信箱 (不需要密碼)
   * @throws ApiError:
   * - status 422: 請求欄位驗證失敗（FastAPI validation error）
-  * - status 409: username 已存在
-  * - status 409: email 已存在且該用戶已完成註冊（已驗證且已設置密碼）
+  * - status 409: username 已存在（AUTH.USER.DUPLICATE_CREDENTIAL）
+  * - status 409: email 已存在且該用戶已完成註冊（AUTH.USER.DUPLICATE_CREDENTIAL）
+  * 
+  * Note:
+  * - 若 email 已存在但用戶尚未完成註冊（未驗證或已驗證但未設置密碼），會重新發送驗證信並回傳該用戶資訊（不會拋出 409）
   */
   async register(userData: AuthRegisterRequest): Promise<UserResponse> {
     return withNetworkErrorHandling(async () => {
@@ -70,11 +76,63 @@ export const authApi = {
     });
   },
 
+  /**
+  * POST /auth/get-email-verification-token
+  * 獲取郵箱驗證 token（用於註冊後獲取 token，避免 email 暴露在 URL）
+  * @throws ApiError:
+  * - status 404: 用戶不存在（AUTH.USER.NOT_FOUND）
+  * - status 400: 信箱已驗證（AUTH.USER.ALREADY_VERIFIED）
+  * - status 500: 獲取驗證 token 失敗（AUTH.TOKEN.GENERATION_FAILED）
+  * 
+  * Note:
+  * - 若用戶已驗證但未設置密碼，允許重新獲取驗證 token
+  */
+  async getEmailVerificationToken(
+      email: string
+    ): Promise<{ token: string; message: string }> {
+      return withNetworkErrorHandling(async () => {
+        const response = await fetch(
+          `${API_BASE_URL}/auth/get-email-verification-token`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ email }),
+          }
+        );
+  
+        if (!response.ok) {
+          await handleApiError(response, "獲取驗證 token 失敗");
+        }
+  
+        const data = await response.json();
+        if (!data?.token) {
+          throw createApiError("未收到驗證 token", response.status);
+        }
+  
+        return {
+          token: data.token,
+          message: data.message || "驗證 token 已生成",
+        };
+      });
+    },
+
   // ===========================================
-  // OAuth 流程功能
+  // OAuth 認證相關功能
   // ===========================================
 
-  // 獲取 OAuth 授權 URL (後端拼接所有相關參數到 auth_url 後面)
+  /**
+  * GET /auth/oauth/{provider}/url
+  * 獲取 OAuth 授權 URL（第一步：將用戶導向 provider 的 OAuth 授權頁面）
+  * @throws ApiError:
+  * - status 400: 不支援的 OAuth 提供商（AUTH.OAUTH.PROVIDER_NOT_SUPPORTED）
+  * - status 503: OAuth 未配置（AUTH.OAUTH.NOT_CONFIGURED）
+  * 
+  * Note:
+  * - 後端會拼接所有必要的 OAuth 參數到 auth_url
+  * - 返回的 auth_url 包含 client_id、redirect_uri、scope、response_type、state 等參數
+  */
   async getOAuthUrl(
     provider: "google" | "facebook" | "line"
   ): Promise<{ auth_url: string }> {
@@ -94,7 +152,16 @@ export const authApi = {
     });
   },
 
-  // OAuth 登入重定向 - getOAuthUrl()成功獲取後 重定向到 OAuth 授權 URL
+  /**
+  * OAuth 登入重定向
+  * 獲取 OAuth 授權 URL 後重定向到 provider 的授權頁面
+  * @throws ApiError:
+  * - 繼承自 getOAuthUrl() 的所有錯誤
+  * 
+  * Note:
+  * - 此方法會自動跳轉到 OAuth 授權頁面，不會返回
+  * - 用戶在授權頁面完成授權後，會被重定向到 redirect_uri
+  */
   async redirectToOAuthLogin(
     provider: "google" | "facebook" | "line"
   ): Promise<void> {
@@ -104,171 +171,6 @@ export const authApi = {
 
       // 重定向到 OAuth 授權頁面
       window.location.href = data.auth_url;
-    });
-  },
-  // OAuth 登入/註冊 - 在 OAuth callback 頁面時執行 (給予後端授權碼)
-  async oauthLogin(
-    provider: "google" | "facebook" | "line",
-    authCode: string
-  ): Promise<OAuthLoginResponse> {
-    return withNetworkErrorHandling(async () => {
-      const response = await fetch(`${API_BASE_URL}/auth/oauth/${provider}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          code: authCode,
-        }),
-        credentials: "include", // 確保接收和發送 cookie
-      });
-
-      if (!response.ok) {
-        await handleApiError(response, `OAuth ${provider} 登入失敗`);
-      }
-
-      const result = await response.json();
-      // 自動設置 access_token
-      tokenManager.setToken(result.access_token);
-      // refresh_token 由後端通過 http-only cookie 管理，前端不需要處理
-
-      return result;
-    });
-  },
-
-  // ===========================================
-  // 郵箱驗證相關功能
-  // ===========================================
-
-  // 驗證郵箱 token
-  async verifyEmail(
-    token: string
-  ): Promise<{ message: string; set_password_token?: string }> {
-    return withNetworkErrorHandling(async () => {
-      const formData = new URLSearchParams();
-      formData.append("token", token);
-
-      // 設置超時時間（10秒）
-      const timeoutMs = 10000;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-          body: formData.toString(),
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          await handleApiError(response, "驗證失敗");
-        }
-
-        const data = await response.json();
-        return {
-          message: data?.message || "驗證成功！",
-          set_password_token: data?.set_password_token,
-        };
-      } catch (error) {
-        clearTimeout(timeoutId);
-
-        // 處理超時錯誤
-        if (error instanceof Error && error.name === "AbortError") {
-          throw createApiError("請求超時，請檢查網路連線後再試", 0, "請求超時");
-        }
-
-        // 重新拋出其他錯誤
-        throw error;
-      }
-    });
-  },
-
-  // 重新寄送驗證信
-  async resendVerificationEmail(email: string): Promise<{ message: string }> {
-    return withNetworkErrorHandling(async () => {
-      const response = await fetch(
-        `${API_BASE_URL}/auth/resend-verification-email`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email }),
-        }
-      );
-
-      if (!response.ok) {
-        await handleApiError(response, "重新寄送驗證信失敗");
-      }
-
-      const data = await response.json();
-      return { message: data?.message || "驗證信已重新發送" };
-    });
-  },
-
-  // 獲取郵箱驗證 token（用於註冊後獲取 token，避免 email 暴露在 URL）
-  async getEmailVerificationToken(
-    email: string
-  ): Promise<{ token: string; message: string }> {
-    return withNetworkErrorHandling(async () => {
-      const response = await fetch(
-        `${API_BASE_URL}/auth/get-email-verification-token`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email }),
-        }
-      );
-
-      if (!response.ok) {
-        await handleApiError(response, "獲取驗證 token 失敗");
-      }
-
-      const data = await response.json();
-      if (!data?.token) {
-        throw createApiError("未收到驗證 token", response.status);
-      }
-
-      return {
-        token: data.token,
-        message: data.message || "驗證 token 已生成",
-      };
-    });
-  },
-
-  // 通過 token 獲取 email（用於前端顯示，避免 email 暴露在 URL）
-  async getEmailByToken(
-    token: string
-  ): Promise<{ email: string; message: string }> {
-    return withNetworkErrorHandling(async () => {
-      const response = await fetch(`${API_BASE_URL}/auth/get-email-by-token`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ token }),
-      });
-
-      if (!response.ok) {
-        await handleApiError(response, "獲取 email 失敗");
-      }
-
-      const data = await response.json();
-      if (!data?.email) {
-        throw createApiError("未收到 email", response.status);
-      }
-
-      return {
-        email: data.email,
-        message: data.message || "成功獲取 email",
-      };
     });
   },
 

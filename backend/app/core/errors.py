@@ -99,4 +99,58 @@ class UserAlreadyExistsError(AppError):
         )
 
 
+class UserNotFoundError(AppError):
+    """用戶不存在錯誤
+    
+    """
+    def __init__(self):
+        super().__init__(
+            code="AUTH.USER.NOT_FOUND",
+            message="User not found",
+            status_code=404,  # 404 Not Found
+        )
+
+
+class UserAlreadyVerifiedError(AppError):
+    """用戶信箱已驗證錯誤
+    
+    """
+    def __init__(self):
+        super().__init__(
+            code="AUTH.USER.ALREADY_VERIFIED",
+            message="Email already verified",
+            status_code=400,  # 400 Bad Request
+        )
+
+
+class OAuthProviderNotSupportedError(AppError):
+    """不支援的 OAuth 提供商錯誤
+    
+    Attributes:
+        provider: 提供商名稱
+    """
+    def __init__(self, provider: str):
+        super().__init__(
+            code="AUTH.OAUTH.PROVIDER_NOT_SUPPORTED",
+            message="OAuth provider not supported",
+            status_code=400,  # 400 Bad Request
+            detail={"provider": provider},
+        )
+
+
+class OAuthNotConfiguredError(AppError):
+    """OAuth 未配置錯誤
+    
+    Attributes:
+        provider: 提供商名稱
+    """
+    def __init__(self, provider: str):
+        super().__init__(
+            code="AUTH.OAUTH.NOT_CONFIGURED",
+            message="OAuth service unavailable",
+            status_code=503,  # 503 Service Unavailable
+            detail={"provider": provider},
+        )
+
+
 

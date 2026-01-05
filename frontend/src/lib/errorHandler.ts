@@ -3,12 +3,17 @@
 // 類型定義
 // ================================================
 
+/**
+ * 後端回傳 API 錯誤基礎類型
+ */
 export interface ApiErrorBase extends Error {
   status?: number;
   detail?: string;
 }
 
-// custom 下一步操作的detail格式
+/**
+ * custom ApiRequiresActionError 的 detail 格式
+ */
 export interface NextActionRequired {
   code: string;
   message: string;
@@ -16,20 +21,26 @@ export interface NextActionRequired {
   data?: Record<string, unknown>;
 }
 
-// custom 前端需要下一步操作的錯誤（去驗證信箱、去補資料等） 
+/**
+ * custom 前端需要下一步操作的錯誤（去驗證信箱、去補資料等） 
+ */
 export interface ApiRequiresActionError extends ApiErrorBase {
   // 由detail取出 nextActionRequired 對象
   nextActionRequired: NextActionRequired;
 }
 
-// fastapi 422 的 detail格式
+/**
+ * fastapi ApiValidationError 的 detail 格式
+ */
 export interface ValidationItem {
   loc: (string | number)[];
   msg: string;
   type: string;
 }
 
-// fastapi 422 資料驗證錯誤
+/**
+ * fastapi 422 資料驗證錯誤
+ */
 export interface ApiValidationError extends ApiErrorBase {
   status: 422;
   // 由detail取出 issue array
@@ -41,7 +52,6 @@ ApiErrorBase |
 ApiRequiresActionError | 
 ApiValidationError;
 
-// 錯誤detail的格式規範
 export type ErrorDetail =
   | string
   | Record<string, unknown>
@@ -256,9 +266,6 @@ export async function handleRequiresActionError(
 
 /**
  * 檢測是否為網絡錯誤（fetch失敗、連接超時等後端出現的錯誤）
- *
- * @param error 錯誤對象
- * @returns 是否為網絡錯誤
  */
 export function isNetworkError(error: unknown): boolean {
   if (!(error instanceof Error)) return false;
