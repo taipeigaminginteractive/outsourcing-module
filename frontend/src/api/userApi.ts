@@ -19,6 +19,25 @@ export interface UserResponse {
   oauth_accounts?: OAuthAccountResponse[];
 }
 
+// User 前端使用的用戶格式（camelCase）
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  role: "user" | "admin" | "moderator";
+  status: "active" | "inactive" | "suspended";
+  avatar?: string;
+  isActive: boolean;
+  isSuperuser: boolean;
+  isVerified?: boolean;
+  isUpgraded?: boolean;
+  createdAt: string;
+  updatedAt: string;
+  lastLogin?: string;
+  oauthAccounts?: OAuthAccount[];
+}
+
+
 
 export interface OAuthAccountResponse {
   id: number;
@@ -29,6 +48,18 @@ export interface OAuthAccountResponse {
   last_used_at?: string;
   created_at: string;
 }
+
+// OAuth Account 前端使用的格式（camelCase）
+export interface OAuthAccount {
+  id: number;
+  provider: string;
+  providerEmail?: string;
+  displayName?: string;
+  avatarUrl?: string;
+  lastUsedAt?: string;
+  createdAt: string;
+}
+
 
 // ----------------------------------------------------
 // 用戶資料管理 API - 專注於用戶資料管理功能
