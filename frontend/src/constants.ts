@@ -6,6 +6,13 @@ export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 /**
+ * 前端 URL
+ * 從環境變數 NEXT_PUBLIC_FRONTEND_URL 讀取，預設為 http://localhost:3000
+ */
+export const FRONTEND_URL =
+  process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000";
+
+/**
  * WebSocket URL
  * 從環境變數 NEXT_PUBLIC_WEBSOCKET_URL 讀取，預設為 ws://localhost:8000/ws
  */

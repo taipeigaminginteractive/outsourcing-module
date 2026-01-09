@@ -4,20 +4,30 @@ Pytest 配置文件 - 全局測試配置和 fixtures
 此外也能在test檔中做環境變數覆蓋
 
 """
-import pytest
 import asyncio
-from typing import AsyncGenerator
-from httpx import AsyncClient, ASGITransport
-from tortoise import Tortoise
-
-
 # 設置測試環境（必須在導入main之前） 
 import os
+from typing import AsyncGenerator
+
+import pytest
+from httpx import ASGITransport, AsyncClient
+from tortoise import Tortoise
+
+# ================================================
+# 設置測試環境
+# ================================================
+
 os.environ["ENV"] = "testing"
+
+os.environ["GOOGLE_CLIENT_ID"] = "test_google_client_id"
+os.environ["GOOGLE_CLIENT_SECRET"] = "test_google_client_secret"
+os.environ["FACEBOOK_CLIENT_ID"] = "test_facebook_client_id"
+os.environ["FACEBOOK_CLIENT_SECRET"] = "test_facebook_client_secret"
+os.environ["LINE_CLIENT_ID"] = "test_line_client_id"
+os.environ["LINE_CLIENT_SECRET"] = "test_line_client_secret"
 
 from main import app
 from settings import settings
-
 
 # 配置測試資料庫（使用 SQLite 內存資料庫）
 TEST_DATABASE_URL = settings.TEST_DATABASE_URL

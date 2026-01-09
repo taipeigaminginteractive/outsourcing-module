@@ -2,17 +2,12 @@
 測試資料工廠
 提供各種模型的工廠函數，用於快速創建測試資料
 """
-from typing import Optional
 from datetime import datetime
+from typing import Optional
 
-from app.db.models import (
-    User,
-)
-from app.db.enums import (
-    UserStatus, UserRole
-)
+from app.db.enums import UserRole, UserStatus
+from app.db.models import User
 from app.utils.pwd_utils import get_password_hash
-
 
 # ================================================
 # User Related Factories
@@ -21,7 +16,7 @@ from app.utils.pwd_utils import get_password_hash
 async def create_test_user(
     username: Optional[str] = None,
     email: Optional[str] = None,
-    password: Optional[str] = "testpass123",
+    password: Optional[str] = "TestPass123",
     status: Optional[UserStatus] = None,
     role: UserRole = UserRole.USER,
     is_active: Optional[bool] = None,
@@ -31,7 +26,14 @@ async def create_test_user(
     **kwargs
 ) -> User:
     """
-    創建測試用戶
+    創建測試用戶 替代 user_service.create_user 函數
+    
+    Note:
+        默認密碼 "TestPass123" 符合驗證規則：
+        - 至少8位
+        - 包含大寫字母 (T, P)
+        - 包含小寫字母 (est, ass)
+        - 包含數字 (123)
     """
     if username is None:
         username = f"testuser_{datetime.now().timestamp()}"

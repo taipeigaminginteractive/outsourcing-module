@@ -1,18 +1,17 @@
 from typing import Optional
 
-from tortoise.exceptions import DoesNotExist, IntegrityError
-from tortoise.expressions import Q
-
 from app.core.errors import UserAlreadyExistsError
 from app.core.logging import get_logger, log_error
 from app.db.models import User
 from app.schemas import user_schema
 from app.utils import pwd_utils
+from tortoise.exceptions import DoesNotExist, IntegrityError
+from tortoise.expressions import Q
 
 logger = get_logger(__name__)
 
 async def create_user(user_data: user_schema.UserCreateDTO) -> User:
-    """創建新用戶(信箱註冊時不設置密碼，需要先驗證郵箱)
+    """創建新用戶(充許註冊時先不設置密碼)
     
     Raises:
         UserAlreadyExistsError: 當用戶名或郵箱已存在時
@@ -51,7 +50,7 @@ async def create_user(user_data: user_schema.UserCreateDTO) -> User:
             field = "credential"  # 默認值
             if existing_user.username == user_data.username:
                 field = "username"
-            elif existing_user.email == user_data.email:
+            elif existing_user.email.lower() == user_data.email.lower():
                 field = "email"
             
             # 記錄用戶已存在錯誤
@@ -95,8 +94,9 @@ async def get_user_by_username(username: str) -> Optional[User]:
         return None
 
 async def get_user_by_email(email: str) -> Optional[User]:
-    """根據郵箱獲取用戶"""
+    """根據郵箱獲取用戶（郵箱不區分大小寫）"""
     try:
-        return await User.get(email=email)
+        # 郵箱標準不區分大小寫，統一轉為小寫查詢
+        return await User.get(email=email.lower())
     except DoesNotExist:
         return None

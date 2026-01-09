@@ -19,14 +19,12 @@
 import secrets
 from urllib.parse import urlencode
 
-from fastapi import APIRouter, HTTPException, status
-
-from app.core import token_auth_logic
-from app.core import errors
+from app.core import errors, token_auth_logic
 from app.core.logging import get_logger
 from app.schemas import user_schema
 from app.services import user_service
 from app.utils import mailer
+from fastapi import APIRouter, HTTPException, status
 from settings import settings
 
 logger = get_logger(__name__)
@@ -50,13 +48,13 @@ async def register(user_data: user_schema.AuthRegisterRequest):
     """註冊信箱(先驗證郵箱，驗證成功後再設置密碼)
     
     Raises:
-        業務邏輯錯誤(HTTPException) :
-            - 409: username 已存在
-            - 409: email 已存在 且 該用戶已完成註冊（已驗證且已設置密碼）
+        HTTPException:
+            - 422: Pydantic validation error (FastAPI自動驗證，沒有message和code，完整detail 為 ValidationItem[])
+            - 409: User already exists (AUTH.USER.DUPLICATE_CREDENTIAL)
 
     Note:
         - 若 email 已存在但用戶尚未完成註冊（未驗證或已驗證但未設置密碼），
-            會重新發送驗證信並回傳該用戶資訊（不會拋出 409）
+        會重新發送驗證信並回傳該用戶資訊（不會拋出 409）
     """
     try:
         create_dto = user_schema.UserCreateDTO.from_request(user_data)
@@ -71,7 +69,7 @@ async def register(user_data: user_schema.AuthRegisterRequest):
             EMAIL_VERIFICATION_EXPIRE_MINUTES
         )
         
-        # 發送驗證信
+        # 發送驗證信（失敗時會自動拋出 EmailSendError）
         await mailer.send_verification_email(
             to_email=user.email,
             username=user.username,
@@ -84,6 +82,9 @@ async def register(user_data: user_schema.AuthRegisterRequest):
         )
         
         return user_schema.UserResponse.model_validate(user)
+    except errors.EmailSendError as e:
+        # 郵件發送失敗，轉換為 HTTP 異常
+        raise errors.app_error_to_http_exception(e)
     except errors.UserAlreadyExistsError as e:
         # @errorhandler：
         # 從已被註冊的帳戶中 挑出未完成註冊流程的用戶 -> 重新發送驗證信
@@ -116,6 +117,7 @@ async def register(user_data: user_schema.AuthRegisterRequest):
                         EMAIL_VERIFICATION_EXPIRE_MINUTES
                     )
                     
+                    # 發送驗證信（失敗時會自動拋出 EmailSendError）
                     await mailer.send_verification_email(
                         to_email=existing_user.email,
                         username=existing_user.username,
@@ -145,10 +147,11 @@ async def get_email_verification_token(
     """獲取郵箱驗證 token（避免 email 暴露在 URL）
     
     Raises:
-        業務邏輯錯誤(HTTPException) :
-            - 404: 用戶不存在（為了安全，不透露用戶是否存在）
-            - 400: 信箱已經驗證過了（已驗證且已設置密碼）
-            - 500: 獲取驗證 token 失敗
+        HTTPException:
+            - 422: Pydantic validation error (FastAPI自動驗證，沒有message和code，完整detail 為 ValidationItem[])
+            - 404: User not found (AUTH.USER.NOT_FOUND)
+            - 400: Email already verified (AUTH.USER.ALREADY_VERIFIED)
+            - 500: Failed to generate verification token (AUTH.TOKEN.GENERATION_FAILED)
 
     Note:
         - 若用戶已驗證但未設置密碼，允許重新獲取驗證 token
@@ -204,9 +207,9 @@ async def get_oauth_url(provider: str, redirect_uri: str = None):
     """獲取 OAuth 授權 URL（第一步：將用戶導向 provider 的 OAuth 授權頁面）
     
     Raises:
-        業務邏輯錯誤(HTTPException) :
-            - 400: 不支援的 OAuth 提供商
-            - 503: OAuth 未配置（provider 的 client_id 未設置）
+        HTTPException:
+            - 400: OAuth provider not supported (AUTH.OAUTH.PROVIDER_NOT_SUPPORTED)
+            - 503: OAuth service unavailable (AUTH.OAUTH.NOT_CONFIGURED)
 
     Note:
         - 如果沒有提供 redirect_uri，將使用後端的回調 URL

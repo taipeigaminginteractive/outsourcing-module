@@ -5,6 +5,6 @@
 // --------------------------------------------
 
 import { setupServer } from "msw/node";
-import { apiHandlers } from "./apiHandlers";
+import { apiHandlers } from "tests@/mocks/apiHandlers";
 
 export const server = setupServer(...apiHandlers);

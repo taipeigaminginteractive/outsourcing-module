@@ -3,7 +3,7 @@ import "@testing-library/jest-dom";
 import { cleanup } from "@testing-library/react";
 import { vi, afterEach, beforeAll, afterAll } from "vitest";
 import React from "react";
-import { server } from "./mocks/server";
+import { server } from "tests@/server";
 
 // 清理每個測試後的 DOM
 afterEach(() => {
