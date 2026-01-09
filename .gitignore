@@ -51,6 +51,9 @@ __pycache__/
 # claude
 .claude/
 
+# cursor
+.cursor/
+
 # Frontend
 ## dependencies
 frontend/node_modules

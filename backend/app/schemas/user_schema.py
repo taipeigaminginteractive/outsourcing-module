@@ -1,9 +1,10 @@
+import re
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field, EmailStr, field_validator
-
 from app.db.enums import UserRole, UserStatus
+from pydantic import BaseModel, EmailStr, Field, field_validator
+
 
 # 用戶基礎 schema
 class UserBase(BaseModel):
@@ -13,9 +14,16 @@ class UserBase(BaseModel):
     @field_validator('username')
     @classmethod
     def validate_username(cls, v):
-        if not v.isalnum():
-            raise ValueError('用戶名只能包含字母和數字')
+        # 只允許 ASCII 字母和數字
+        if not re.match(r'^[a-zA-Z0-9]+$', v):
+            raise ValueError('用戶名只能包含英文字母和數字')
         return v
+    
+    @field_validator('email')
+    @classmethod
+    def normalize_email(cls, v):
+        # 郵箱標準不區分大小寫，統一轉為小寫
+        return v.lower() if isinstance(v, str) else v
 
 class AuthRegisterRequest(UserBase):
     # 繼承 UserBase - username和 email
@@ -34,6 +42,22 @@ class UserCreateDTO(UserBase):
             email=request.email,
             password=None  # 註冊時不設置密碼
         )
+    
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            if len(v) < 8:
+                raise ValueError('密碼長度至少8位')
+            if len(v) > 72:
+                raise ValueError('密碼長度不得超過72位')
+            if not any(c.isupper() for c in v):
+                raise ValueError('密碼必須包含至少一個大寫字母')
+            if not any(c.islower() for c in v):
+                raise ValueError('密碼必須包含至少一個小寫字母')
+            if not any(c.isdigit() for c in v):
+                raise ValueError('密碼必須包含至少一個數字')
+        return v
 
 class OAuthAccountResponse(BaseModel):
     id: int = Field(..., description="OAuth 帳號ID")
@@ -68,3 +92,18 @@ class UserResponse(UserBase):
             datetime: lambda v: v.isoformat()
         }
 
+class GetEmailVerificationTokenRequest(BaseModel):
+    email: EmailStr = Field(..., description="電子郵件")
+    
+    @field_validator('email')
+    @classmethod
+    def normalize_email(cls, v):
+        # 郵箱標準不區分大小寫，統一轉為小寫
+        return v.lower() if isinstance(v, str) else v
+
+class GetEmailVerificationTokenResponse(BaseModel):
+    token: str = Field(..., description="驗證 token")
+    message: str = Field(..., description="回應訊息")
+
+class OAuthAuthUrlResponse(BaseModel):
+    auth_url: str = Field(..., description="OAuth 授權 URL")

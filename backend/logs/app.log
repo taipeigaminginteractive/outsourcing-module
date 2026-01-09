@@ -1,0 +1,71 @@
+[2026-01-07 22:15:05,516] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:05,563] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:05,607] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:05,646] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:05,684] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:05,723] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:05,759] WARNING  passlib.handlers.bcrypt:_load_backend_mixin:622 - (trapped) error reading bcrypt version
+[2026-01-07 22:15:05,880] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:05,884] WARNING  passlib.handlers.bcrypt:_load_backend_mixin:622 - (trapped) error reading bcrypt version
+[2026-01-07 22:15:05,972] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:05,982] INFO     httpx:_send_single_request:1740 - HTTP Request: POST http://test/auth/register "HTTP/1.1 422 Unprocessable Entity"
+[2026-01-07 22:15:05,983] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:05,988] INFO     httpx:_send_single_request:1740 - HTTP Request: POST http://test/auth/register "HTTP/1.1 422 Unprocessable Entity"
+[2026-01-07 22:15:05,989] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:05,994] INFO     httpx:_send_single_request:1740 - HTTP Request: POST http://test/auth/register "HTTP/1.1 422 Unprocessable Entity"
+[2026-01-07 22:15:05,995] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,001] INFO     httpx:_send_single_request:1740 - HTTP Request: POST http://test/auth/register "HTTP/1.1 422 Unprocessable Entity"
+[2026-01-07 22:15:06,002] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,007] INFO     httpx:_send_single_request:1740 - HTTP Request: POST http://test/auth/register "HTTP/1.1 422 Unprocessable Entity"
+[2026-01-07 22:15:06,008] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,012] INFO     httpx:_send_single_request:1740 - HTTP Request: POST http://test/auth/register "HTTP/1.1 422 Unprocessable Entity"
+[2026-01-07 22:15:06,014] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,019] INFO     httpx:_send_single_request:1740 - HTTP Request: POST http://test/auth/register "HTTP/1.1 422 Unprocessable Entity"
+[2026-01-07 22:15:06,020] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,025] INFO     httpx:_send_single_request:1740 - HTTP Request: POST http://test/auth/register "HTTP/1.1 422 Unprocessable Entity"
+[2026-01-07 22:15:06,026] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,067] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,074] INFO     httpx:_send_single_request:1740 - HTTP Request: POST http://test/auth/get-email-verification-token "HTTP/1.1 200 OK"
+[2026-01-07 22:15:06,075] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,080] INFO     httpx:_send_single_request:1740 - HTTP Request: POST http://test/auth/get-email-verification-token "HTTP/1.1 200 OK"
+[2026-01-07 22:15:06,081] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,087] INFO     httpx:_send_single_request:1740 - HTTP Request: POST http://test/auth/get-email-verification-token "HTTP/1.1 200 OK"
+[2026-01-07 22:15:06,088] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,093] ERROR    app.core.errors:log_error:164 - UserNotFoundError: User not found | context={'include_fields': None, 'function': 'app_error_to_http_exception'} | code=AUTH.USER.NOT_FOUND | status=404
+[2026-01-07 22:15:06,093] INFO     httpx:_send_single_request:1740 - HTTP Request: POST http://test/auth/get-email-verification-token "HTTP/1.1 404 Not Found"
+[2026-01-07 22:15:06,094] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,100] ERROR    app.core.errors:log_error:164 - UserNotFoundError: User not found | context={'include_fields': None, 'function': 'app_error_to_http_exception'} | code=AUTH.USER.NOT_FOUND | status=404
+[2026-01-07 22:15:06,100] INFO     httpx:_send_single_request:1740 - HTTP Request: POST http://test/auth/get-email-verification-token "HTTP/1.1 404 Not Found"
+[2026-01-07 22:15:06,101] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,105] WARNING  passlib.handlers.bcrypt:_load_backend_mixin:622 - (trapped) error reading bcrypt version
+[2026-01-07 22:15:06,190] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,195] INFO     httpx:_send_single_request:1740 - HTTP Request: POST http://test/auth/get-email-verification-token "HTTP/1.1 422 Unprocessable Entity"
+[2026-01-07 22:15:06,196] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,200] INFO     httpx:_send_single_request:1740 - HTTP Request: POST http://test/auth/get-email-verification-token "HTTP/1.1 422 Unprocessable Entity"
+[2026-01-07 22:15:06,201] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,206] INFO     httpx:_send_single_request:1740 - HTTP Request: POST http://test/auth/get-email-verification-token "HTTP/1.1 422 Unprocessable Entity"
+[2026-01-07 22:15:06,207] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,212] ERROR    main:log_error:164 - TypeError: list indices must be integers or slices, not str | context={'method': 'GET', 'path': '/auth/oauth/google/url', 'query': 'redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fcallback', 'client': '127.0.0.1'}
+[2026-01-07 22:15:06,407] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,412] ERROR    main:log_error:164 - TypeError: list indices must be integers or slices, not str | context={'method': 'GET', 'path': '/auth/oauth/google/url', 'query': '', 'client': '127.0.0.1'}
+[2026-01-07 22:15:06,543] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,547] ERROR    main:log_error:164 - TypeError: list indices must be integers or slices, not str | context={'method': 'GET', 'path': '/auth/oauth/facebook/url', 'query': 'redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fcallback', 'client': '127.0.0.1'}
+[2026-01-07 22:15:06,665] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,669] ERROR    main:log_error:164 - TypeError: list indices must be integers or slices, not str | context={'method': 'GET', 'path': '/auth/oauth/line/url', 'query': 'redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fcallback', 'client': '127.0.0.1'}
+[2026-01-07 22:15:06,793] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,814] ERROR    main:log_error:164 - TypeError: list indices must be integers or slices, not str | context={'method': 'GET', 'path': '/auth/oauth/google/url', 'query': 'redirect_uri=https%3A%2F%2Fexample.com%2Fcustom%2Fcallback', 'client': '127.0.0.1'}
+[2026-01-07 22:15:06,923] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,927] ERROR    app.core.errors:log_error:164 - OAuthProviderNotSupportedError: OAuth provider not supported | context={'include_fields': None, 'function': 'app_error_to_http_exception'} | code=AUTH.OAUTH.PROVIDER_NOT_SUPPORTED | status=400 | detail={'provider': 'twitter'}
+[2026-01-07 22:15:06,927] INFO     httpx:_send_single_request:1740 - HTTP Request: GET http://test/auth/oauth/twitter/url?redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fcallback "HTTP/1.1 400 Bad Request"
+[2026-01-07 22:15:06,928] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,932] ERROR    app.core.errors:log_error:164 - OAuthNotConfiguredError: OAuth service unavailable | context={'include_fields': ['provider'], 'function': 'app_error_to_http_exception'} | code=AUTH.OAUTH.NOT_CONFIGURED | status=503 | detail={'provider': 'google'}
+[2026-01-07 22:15:06,932] INFO     httpx:_send_single_request:1740 - HTTP Request: GET http://test/auth/oauth/google/url?redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fcallback "HTTP/1.1 503 Service Unavailable"
+[2026-01-07 22:15:06,934] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,938] INFO     httpx:_send_single_request:1740 - HTTP Request: GET http://test/auth/oauth//url?redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fcallback "HTTP/1.1 404 Not Found"
+[2026-01-07 22:15:06,939] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,943] ERROR    app.core.errors:log_error:164 - OAuthProviderNotSupportedError: OAuth provider not supported | context={'include_fields': None, 'function': 'app_error_to_http_exception'} | code=AUTH.OAUTH.PROVIDER_NOT_SUPPORTED | status=400 | detail={'provider': 'goo@gle'}
+[2026-01-07 22:15:06,943] INFO     httpx:_send_single_request:1740 - HTTP Request: GET http://test/auth/oauth/goo@gle/url?redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fcallback "HTTP/1.1 400 Bad Request"
+[2026-01-07 22:15:06,944] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown
+[2026-01-07 22:15:06,948] ERROR    app.core.errors:log_error:164 - OAuthProviderNotSupportedError: OAuth provider not supported | context={'include_fields': None, 'function': 'app_error_to_http_exception'} | code=AUTH.OAUTH.PROVIDER_NOT_SUPPORTED | status=400 | detail={'provider': 'GOOGLE'}
+[2026-01-07 22:15:06,949] INFO     httpx:_send_single_request:1740 - HTTP Request: GET http://test/auth/oauth/GOOGLE/url?redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fauth%2Fcallback "HTTP/1.1 400 Bad Request"
+[2026-01-07 22:15:06,950] INFO     tortoise:close_connections:569 - Tortoise-ORM shutdown

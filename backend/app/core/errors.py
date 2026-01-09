@@ -2,12 +2,11 @@
 # 結構化錯誤系統
 # ============================================
 # 錯誤碼格式：<DOMAIN>.<RESOURCE>.<REASON>
-# 例如：AUTH.USER.DUPLICATE_USERNAME
+# 例如：AUTH.USER.DUPLICATE_CREDENTIAL
 # ============================================
 
-from fastapi import HTTPException
-
 from app.core.logging import get_logger, log_app_error
+from fastapi import HTTPException
 
 logger = get_logger(__name__)
 
@@ -150,6 +149,22 @@ class OAuthNotConfiguredError(AppError):
             message="OAuth service unavailable",
             status_code=503,  # 503 Service Unavailable
             detail={"provider": provider},
+        )
+
+
+class EmailSendError(AppError):
+    """郵件發送失敗錯誤
+    
+    Note:
+        - 用於郵件服務暫時不可用的情況
+        - 使用 503 狀態碼表示服務暫時無法使用，用戶應稍後重試
+    """
+    def __init__(self, email_type: str = "verification"):
+        super().__init__(
+            code="EMAIL.SEND.FAILED",
+            message="Failed to send email, please try again later",
+            status_code=503,  # 503 Service Unavailable
+            detail={"email_type": email_type},
         )
 
 

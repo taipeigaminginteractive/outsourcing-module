@@ -1,5 +1,6 @@
-from typing import Optional, List
 from pathlib import Path
+from typing import List, Optional
+
 from pydantic_settings import BaseSettings
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -39,8 +40,40 @@ class Settings(BaseSettings):
     ERROR_LOG_FILE: Path = BASE_DIR / "logs" / "error.log"
 
     # OAuth Providers
-    OAUTH_PROVIDERS: List[str] = ["google", "facebook", "line"]
-
+    GOOGLE_CLIENT_ID: Optional[str] = None
+    GOOGLE_CLIENT_SECRET: Optional[str] = None
+    
+    FACEBOOK_CLIENT_ID: Optional[str] = None
+    FACEBOOK_CLIENT_SECRET: Optional[str] = None
+    
+    LINE_CLIENT_ID: Optional[str] = None
+    LINE_CLIENT_SECRET: Optional[str] = None
+    OAUTH_PROVIDERS: dict = {
+        "google": {
+            "client_id": GOOGLE_CLIENT_ID,
+            "client_secret": GOOGLE_CLIENT_SECRET,
+            "auth_url": "https://accounts.google.com/o/oauth2/v2/auth",
+            "token_url": "https://oauth2.googleapis.com/token",
+            "user_info_url": "https://www.googleapis.com/oauth2/v3/userinfo",
+            "scope": "openid email profile" # scope 是 OAuth 授權的範圍
+        },
+        "facebook": {
+            "client_id": FACEBOOK_CLIENT_ID,
+            "client_secret": FACEBOOK_CLIENT_SECRET,
+            "auth_url": "https://www.facebook.com/v18.0/dialog/oauth",
+            "token_url": "https://graph.facebook.com/v18.0/oauth/access_token",
+            "user_info_url": "https://graph.facebook.com/v18.0/me",
+            "scope": "email"
+        },
+        "line": {
+            "client_id": LINE_CLIENT_ID,
+            "client_secret": LINE_CLIENT_SECRET,
+            "auth_url": "https://access.line.me/oauth2/v2.1/authorize",
+            "token_url": "https://api.line.me/oauth2/v2.1/token",
+            "user_info_url": "https://api.line.me/v2/profile",
+            "scope": "profile openid email"
+        }
+    }
 
 
     # Backend and Frontend URLs

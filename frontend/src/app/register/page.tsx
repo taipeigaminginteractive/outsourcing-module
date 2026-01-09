@@ -22,6 +22,17 @@
 // - 內部模組使用 @/ 別名（對應 tsconfig.json 的 paths 設定）
 // ============================================
 
+/** 
+ * RegisterPage
+ * 包含：
+ * - header 標題區塊
+ * - errorMessage 錯誤訊息區塊
+ * - emailRegisterForm 郵箱註冊表單
+ * - oauthRegisterButtons 第三方登入按鈕區塊
+ * - termsOfService 服務條款
+ * - switchToLogin 登入連結
+ */
+
 import React, { useState } from "react";
 
 import { useRouter } from "next/navigation";
@@ -38,33 +49,33 @@ export default function RegisterPage() {
 
   // Store Hooks
   const {
-    isRegistering: isLoading,
-    registerError: error,
+    isRegistering,
+    registerError,
     clearError,
     redirectToOAuthLogin,
     register,
   } = useUserStore();
 
-  // @state [RegisterPage]:C2 表單資料
+  // @state [RegisterPage]:emailRegisterForm 表單資料
   const [formData, setFormData] = useState({
     username: "",
     email: "",
   });
 
-  // @state [RegisterPage]:C3 表單錯誤訊息
+  // @state [RegisterPage]:errorMessage 表單錯誤訊息
   const [formError, setFormError] = useState<string | null>(null);
 
-  // @value [RegisterPage]:C3 錯誤訊息顯示 (使用 UserStore registerError 或 formError state)
-  const errorMessage = error || formError; 
+  // @value [RegisterPage]:errorMessage 錯誤訊息顯示 (使用 UserStore registerError 或 formError state)
+  const errorMessage = registerError || formError; 
 
-  // @effect [RegisterPage]:C3 清除錯誤（當組件掛載時）
+  // @effect [RegisterPage]:errorMessage 清除錯誤（當組件掛載時）
   React.useEffect(() => {
     return () => {
       clearError();
     };
   }, [clearError]);
 
-  // @action [RegisterPage]:C3.1 C3.2 驗證單個欄位（用於 onBlur）
+  // @action [RegisterPage]:emailRegisterForm 驗證單個欄位（用於 onBlur）
   const validateField = (field: "username" | "email"): boolean => {
     if (field === "username") {
       const trimmedUsername = formData.username.trim();
@@ -100,7 +111,7 @@ export default function RegisterPage() {
     return true;
   };
 
-  // @action [RegisterPage]:C3 表單驗證（用於 onSubmit 與後端驗證規則一致）
+  // @action [RegisterPage]:emailRegisterForm 表單驗證（用於 onSubmit 與後端驗證規則一致）
   const validateForm = (): boolean => {
     const trimmedUsername = formData.username.trim();
     const trimmedEmail = formData.email.trim();
@@ -122,7 +133,7 @@ export default function RegisterPage() {
 
     // 檢查使用者名稱是否只包含字母和數字
     if (!/^[a-zA-Z0-9]+$/.test(trimmedUsername)) {
-      setFormError("使用者名稱只能包含字母和數字");
+      setFormError("使用者名稱只能包含英文字母和數字");
       return false;
     }
 
@@ -139,7 +150,7 @@ export default function RegisterPage() {
     return true;
   };
 
-  // @action [RegisterPage]:C3 郵箱註冊處理
+  // @action [RegisterPage]:emailRegisterForm 郵箱註冊處理函數
   const handleEmailRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
@@ -150,7 +161,7 @@ export default function RegisterPage() {
 
     try {
       const email = formData.email.trim();
-      // [UserStore]:register
+      // [UserStore]:register 
       await register({
         username: formData.username.trim(),
         email: email,
@@ -161,13 +172,13 @@ export default function RegisterPage() {
       // 註冊資料發送後，跳轉到郵箱驗證頁面（使用 token）
       router.push(`/register/verify-email?token=${encodeURIComponent(token)}`);
     } catch (error) {
-      // [UserStore]:registerError
+      // [UserStore]:registerError -> errorMessage顯示
       console.error("註冊失敗:", error);
       
     }
   };
 
-  // @action [RegisterPage]:C5 OAuth 註冊處理
+  // @action [RegisterPage]:oauthRegisterButtons 第三方登入處理函數
   const handleOAuthRegister = async (
     provider: "google" | "facebook" | "line"
   ) => {
@@ -175,20 +186,20 @@ export default function RegisterPage() {
       // [UserStore]:redirectToOAuthLogin (導向 OAuth 授權頁面)
       await redirectToOAuthLogin(provider, "register");
     } catch (error) {
-      // [UserStore]:registerError
+      // [UserStore]:registerError -> errorMessage顯示
       console.error(`${provider} 註冊失敗:`, error);
     }
   };
 
   return (
     <>
-      {/* @ui [RegisterPage]:C1 標題區塊 */}
+      {/* @ui [RegisterPage]:header 標題區塊 */}
       <div className="text-center">
         <h2 className="text-3xl font-bold text-gray-900 mb-2">註冊</h2>
         <p className="text-gray-600">選擇您偏好的註冊方式</p>
       </div>
 
-      {/* @ui RegisterPage:C2 - 使用 errorMessage state */}
+      {/* @ui [RegisterPage]:errorMessage 錯誤訊息區塊 - 使用 errorMessage state */}
       {errorMessage && (
         <div
           className="p-4 bg-red-50 border border-red-200 rounded-md"
@@ -198,10 +209,10 @@ export default function RegisterPage() {
         </div>
       )}
 
-      {/* @ui [RegisterPage]:C3 郵箱註冊表單 - 使用 handleEmailRegister, validateForm, validateField */}
+      {/* @ui [RegisterPage]:emailRegisterForm 郵箱註冊表單 - 使用 handleEmailRegister, validateForm, validateField */}
       <form onSubmit={handleEmailRegister} className="space-y-6" noValidate>
-          <div className="bg-white rounded-lg shadow-md p-6 space-y-4">
-            {/* @ui [RegisterPage]:C3.1 使用者名稱輸入欄位 - 使用 formData.username, validateField("username") */}
+          <div className="bg-white C3-lg shadow-md p-6 space-y-4">
+            {/* 使用者名稱輸入欄位 - 使用 formData.username, validateField("username") */}
             <div>
               <label
                 htmlFor="register-username"
@@ -225,7 +236,7 @@ export default function RegisterPage() {
                     validateField("username");
                   }
                 }}
-                disabled={isLoading}
+                disabled={isRegistering}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-theme-green-logo disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="請輸入使用者名稱"
                 required
@@ -235,7 +246,7 @@ export default function RegisterPage() {
               </p>
             </div>
 
-            {/* @ui [RegisterPage]:C3.2 電子信箱輸入欄位 - 使用 formData.email, validateField("email") */}
+            {/* 電子信箱輸入欄位 - 使用 formData.email, validateField("email") */}
             <div>
               <label
                 htmlFor="register-email"
@@ -258,33 +269,32 @@ export default function RegisterPage() {
                     validateField("email");
                   }
                 }}
-                disabled={isLoading}
+                disabled={isRegistering}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-theme-green-logo disabled:opacity-50 disabled:cursor-not-allowed"
                 placeholder="請輸入電子信箱"
                 required
               />
             </div>
 
-            {/* @ui [RegisterPage]:C3.3 提示訊息 */}
+            {/* 註冊表單 提示訊息 */}
             <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
               <p className="text-sm text-blue-600">
                 註冊後請至信箱點擊驗證連結並設定密碼，即可啟用帳號。
               </p>
             </div>
 
-            {/* @ui [RegisterPage]:C3.4 註冊按鈕 - 觸發 handleEmailRegister */}
+            {/* 註冊表單 註冊按鈕 - 觸發 handleEmailRegister */}
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isRegistering}
               data-testid="register-submit-button"
               className="w-full px-4 py-3 bg-theme-green-logo text-white rounded-md hover:bg-theme-green-logo-light focus:outline-none focus:ring-2 focus:ring-theme-green-logo disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
             >
-              {isLoading ? "註冊中..." : "使用 電子信箱 註冊"}
+              {isRegistering ? "註冊中..." : "使用 電子信箱 註冊"}
             </button>
           </div>
         </form>
 
-      {/* @ui [RegisterPage]:C4 分隔線 */}
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-gray-300"></div>
@@ -294,12 +304,12 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      {/* @ui [RegisterPage]:C5 OAuth 註冊按鈕區塊 - 使用 handleOAuthRegister */}
+      {/* @ui [RegisterPage]:oauthRegisterButtons 第三方登入按鈕區塊 - 使用 handleOAuthRegister */}
       <div className="bg-white rounded-lg shadow-md p-6 space-y-3">
-        {/* @ui [RegisterPage]:C5.1 Google 註冊按鈕 */}
+        {/* Google 註冊按鈕 */}
         <button
           onClick={() => handleOAuthRegister("google")}
-          disabled={isLoading}
+          disabled={isRegistering}
           data-testid="register-google-button"
           className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-theme-green-logo disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
@@ -307,14 +317,14 @@ export default function RegisterPage() {
             <FaGoogle className="text-red-500" size={20} />
           </div>
           <span className="text-gray-700 font-medium w-40 text-left">
-            &nbsp;{isLoading ? "註冊中..." : "使用 Google 註冊"}
+            &nbsp;{isRegistering ? "註冊中..." : "使用 Google 註冊"}
           </span>
         </button>
 
-        {/* @ui [RegisterPage]:C5.2 Facebook 註冊按鈕 */}
+        {/* Facebook 註冊按鈕 */}
         <button
           onClick={() => handleOAuthRegister("facebook")}
-          disabled={isLoading}
+          disabled={isRegistering}
           data-testid="register-facebook-button"
           className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-theme-green-logo disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
@@ -322,14 +332,14 @@ export default function RegisterPage() {
             <FaFacebook className="text-blue-500" size={20} />
           </div>
           <span className="text-gray-700 font-medium w-40 text-left">
-            &nbsp;{isLoading ? "註冊中..." : "使用 Facebook 註冊"}
+            &nbsp;{isRegistering ? "註冊中..." : "使用 Facebook 註冊"}
           </span>
         </button>
 
-        {/* @ui [RegisterPage]:C5.3 Line 註冊按鈕 */}
+        {/* Line 註冊按鈕 */}
         <button
           onClick={() => handleOAuthRegister("line")}
-          disabled={isLoading}
+          disabled={isRegistering}
           data-testid="register-line-button"
           className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-theme-green-logo disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
@@ -337,12 +347,12 @@ export default function RegisterPage() {
             <FaLine className="text-green-500" size={20} />
           </div>
           <span className="text-gray-700 font-medium w-40 text-left">
-            &nbsp;{isLoading ? "註冊中..." : "使用 Line 註冊"}
+            &nbsp;{isRegistering ? "註冊中..." : "使用 Line 註冊"}
           </span>
         </button>
       </div>
 
-      {/* @ui [RegisterPage]:C6 服務條款 */}
+      {/* @ui [RegisterPage]:termsOfService 服務條款 */}
       <div className="p-4 bg-gray-50 rounded-lg">
         <p className="text-xs text-gray-600 text-center">
           註冊即表示您同意我們的
@@ -366,7 +376,7 @@ export default function RegisterPage() {
         </p>
       </div>
 
-      {/* @ui [RegisterPage]:C7 登入連結 */}
+      {/* @ui [RegisterPage]:switchToLogin */}
       <div className="text-center">
         <p className="text-sm text-gray-600">
           已經有帳號？
