@@ -11,52 +11,37 @@ jobs:
       - uses: actions/checkout@v4
 
       # ---------- infra ----------
-      - name: Start DB & Redis
-        run: docker compose -f docker/docker-compose.ci.yml up -d
+      - name: Start CI services
+        run: make ci-services-up
 
-      - name: Wait for postgres
-        run: |
-          until pg_isready -h localhost -p 5432 -U test; do sleep 2; done
+      - name: Wait for database
+        run: make ci-wait-db
 
       # ---------- backend ----------
-      - name: Backend setup & lint
-        run: |
-          cd backend
-          python -m venv .venv
-          source .venv/bin/activate
-          pip install -r requirements.txt
-          if [ -n "$(find . -name '*.py' -not -path './.venv/*' -not -path './venv/*')" ]; then
-            echo "Running Ruff check..."
-            ruff check .
-            echo "Running Black format check..."
-            black --check .
-            echo "Running MyPy type check..."
-            mypy .
-          else
-            echo "No Python files found, skipping lint checks"
-          fi
+      - name: Backend setup
+        run: make ci-backend-setup
+
+      - name: Backend lint
+        run: make ci-backend-lint
 
       - name: Backend test
-        run: |
-          cd backend
-          source .venv/bin/activate
-          pytest
+        run: make ci-backend-test
 
       # ---------- frontend ----------
-      - name: Frontend setup & lint
-        run: |
-          cd frontend
-          npm ci
-          npm run lint
+      - name: Frontend setup
+        run: make ci-frontend-setup
+
+      - name: Frontend lint
+        run: make ci-frontend-lint
 
       - name: Frontend test
-        run: |
-          cd frontend
-          npm run test
+        run: make ci-frontend-test
 
       # ---------- e2e ----------
-      - name: Playwright
-        run: |
-          cd frontend
-          npx playwright install --with-deps
-          npx playwright test
+      - name: E2E test
+        run: make ci-frontend-test-e2e
+
+      # ---------- cleanup ----------
+      - name: Cleanup
+        if: always()
+        run: make ci-services-down

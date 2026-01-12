@@ -10,7 +10,11 @@
 	backend-lint backend-format backend-lint-fix \
 	frontend-dev frontend-build frontend-start frontend-lint \
 	frontend-test frontend-test-run frontend-test-ui frontend-test-cov \
-	frontend-test-e2e frontend-test-e2e-ui frontend-test-e2e-debug frontend-install
+	frontend-test-e2e frontend-test-e2e-ui frontend-test-e2e-debug frontend-install \
+	ci-services-up ci-services-down ci-wait-db \
+	ci-backend-setup ci-backend-lint ci-backend-test \
+	ci-frontend-setup ci-frontend-lint ci-frontend-test ci-frontend-test-e2e \
+	ci-test-all
 
 # 默認目標
 .DEFAULT_GOAL := help
@@ -53,6 +57,19 @@ help: ## 顯示此幫助信息
 	@echo "  make test-services-up  - Start MailHog and other test support services"
 	@echo "  make test-services-down- Stop MailHog and other test support services"
 	@echo "  make mailhog-open      - Open MailHog Web UI in browser"
+	@echo ""
+	@echo "$(GREEN)CI/CD Commands:$(NC)"
+	@echo "  make ci-services-up       - Start CI test services (Postgres/Redis)"
+	@echo "  make ci-services-down     - Stop CI test services"
+	@echo "  make ci-wait-db           - Wait for Postgres to be ready"
+	@echo "  make ci-backend-setup     - Setup backend environment"
+	@echo "  make ci-backend-lint      - Run backend lint checks"
+	@echo "  make ci-backend-test      - Run backend tests"
+	@echo "  make ci-frontend-setup    - Setup frontend environment"
+	@echo "  make ci-frontend-lint     - Run frontend lint checks"
+	@echo "  make ci-frontend-test     - Run frontend unit tests"
+	@echo "  make ci-frontend-test-e2e - Run frontend E2E tests"
+	@echo "  make ci-test-all          - Run complete CI test pipeline"
 	@echo ""
 	@echo "$(GREEN)General Commands:$(NC)"
 	@echo "  make build      - Build all images"
@@ -185,6 +202,82 @@ test-services-down: ## 停止測試輔助資源 (MailHog 等)
 mailhog-open: ## 在瀏覽器中打開 MailHog Web UI (http://localhost:8025)
 	@echo "$(BLUE)📬 Opening MailHog Web UI...$(NC)"
 	@open http://localhost:8025 || xdg-open http://localhost:8025 || echo "Please manually open http://localhost:8025"
+
+# ===========================================
+# CI/CD 命令
+# ===========================================
+
+CI_COMPOSE_FILE := infra/docker-compose.ci.yml
+
+ci-services-up: ## 啟動 CI 測試所需的服務 (Postgres/Redis)
+	@echo "$(BLUE)🔌 Starting CI services (Postgres/Redis)...$(NC)"
+	docker compose -f $(CI_COMPOSE_FILE) up -d postgres redis
+
+ci-services-down: ## 停止 CI 測試服務
+	@echo "$(BLUE)🔌 Stopping CI services...$(NC)"
+	docker compose -f $(CI_COMPOSE_FILE) down -v
+
+ci-wait-db: ## 等待 Postgres 資料庫就緒
+	@echo "$(BLUE)⏳ Waiting for Postgres to be ready...$(NC)"
+	@timeout=60; \
+	elapsed=0; \
+	until docker exec platform_postgres_dev pg_isready -U platform_user 2>/dev/null || [ $$elapsed -ge $$timeout ]; do \
+		echo "Waiting for postgres... ($$elapsed/$$timeout seconds)"; \
+		sleep 2; \
+		elapsed=$$((elapsed + 2)); \
+	done; \
+	if [ $$elapsed -ge $$timeout ]; then \
+		echo "$(RED)❌ Timeout waiting for Postgres$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(GREEN)✅ Postgres is ready!$(NC)"
+
+ci-backend-setup: ## CI: 設置後端環境
+	@echo "$(BLUE)🔧 Setting up backend environment...$(NC)"
+	cd backend && python -m venv .venv
+	cd backend && . .venv/bin/activate && pip install -r requirements.txt
+	@echo "$(GREEN)✅ Backend setup completed!$(NC)"
+
+ci-backend-lint: ## CI: 執行後端 lint 檢查
+	@echo "$(BLUE)🔍 Running backend lint checks...$(NC)"
+	cd backend && . .venv/bin/activate && \
+	if [ -n "$$(find . -name '*.py' -not -path './.venv/*' -not -path './venv/*')" ]; then \
+		echo "Running Ruff check..." && ruff check . && \
+		echo "Running Black format check..." && black --check . && \
+		echo "Running MyPy type check..." && mypy .; \
+	else \
+		echo "No Python files found, skipping lint checks"; \
+	fi
+	@echo "$(GREEN)✅ Backend lint checks passed!$(NC)"
+
+ci-backend-test: ## CI: 執行後端測試
+	@echo "$(BLUE)🧪 Running backend tests...$(NC)"
+	cd backend && . .venv/bin/activate && pytest
+	@echo "$(GREEN)✅ Backend tests passed!$(NC)"
+
+ci-frontend-setup: ## CI: 設置前端環境
+	@echo "$(BLUE)🔧 Setting up frontend environment...$(NC)"
+	cd frontend && npm ci
+	@echo "$(GREEN)✅ Frontend setup completed!$(NC)"
+
+ci-frontend-lint: ## CI: 執行前端 lint 檢查
+	@echo "$(BLUE)🔍 Running frontend lint checks...$(NC)"
+	cd frontend && npm run lint
+	@echo "$(GREEN)✅ Frontend lint checks passed!$(NC)"
+
+ci-frontend-test: ## CI: 執行前端單元測試
+	@echo "$(BLUE)🧪 Running frontend unit tests...$(NC)"
+	cd frontend && npm run test:run
+	@echo "$(GREEN)✅ Frontend unit tests passed!$(NC)"
+
+ci-frontend-test-e2e: ## CI: 執行前端 E2E 測試
+	@echo "$(BLUE)🎭 Running frontend E2E tests...$(NC)"
+	cd frontend && npx playwright install --with-deps
+	cd frontend && npx playwright test
+	@echo "$(GREEN)✅ Frontend E2E tests passed!$(NC)"
+
+ci-test-all: ci-services-up ci-wait-db ci-backend-setup ci-backend-lint ci-backend-test ci-frontend-setup ci-frontend-lint ci-frontend-test ci-frontend-test-e2e ci-services-down ## CI: 執行所有測試流程
+	@echo "$(GREEN)🎉 All CI tests completed successfully!$(NC)"
 
 # ===========================================
 # 通用命令
