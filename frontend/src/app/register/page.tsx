@@ -56,26 +56,26 @@ export default function RegisterPage() {
     register,
   } = useUserStore();
 
-  // @state [RegisterPage]:emailRegisterForm 表單資料
+  // @ui [RegisterPage]:emailRegisterForm 表單資料
   const [formData, setFormData] = useState({
     username: "",
     email: "",
   });
 
-  // @state [RegisterPage]:errorMessage 表單錯誤訊息
+  // @ui [RegisterPage]:errorMessage 表單錯誤訊息
   const [formError, setFormError] = useState<string | null>(null);
 
-  // @value [RegisterPage]:errorMessage 錯誤訊息顯示 (使用 UserStore registerError 或 formError state)
+  // @ui [RegisterPage]:errorMessage 錯誤訊息顯示 (使用 UserStore registerError 或 formError state)
   const errorMessage = registerError || formError; 
 
-  // @effect [RegisterPage]:errorMessage 清除錯誤（當組件掛載時）
+  // @ui [RegisterPage]:errorMessage 清除錯誤（當組件掛載時）
   React.useEffect(() => {
     return () => {
       clearError();
     };
   }, [clearError]);
 
-  // @action [RegisterPage]:emailRegisterForm 驗證單個欄位（用於 onBlur）
+  // @remote [RegisterPage]:emailRegisterForm 驗證單個欄位（用於 onBlur）
   const validateField = (field: "username" | "email"): boolean => {
     if (field === "username") {
       const trimmedUsername = formData.username.trim();
@@ -111,7 +111,7 @@ export default function RegisterPage() {
     return true;
   };
 
-  // @action [RegisterPage]:emailRegisterForm 表單驗證（用於 onSubmit 與後端驗證規則一致）
+  // @remote [RegisterPage]:emailRegisterForm 表單驗證（用於 onSubmit 與後端驗證規則一致）
   const validateForm = (): boolean => {
     const trimmedUsername = formData.username.trim();
     const trimmedEmail = formData.email.trim();
@@ -150,7 +150,7 @@ export default function RegisterPage() {
     return true;
   };
 
-  // @action [RegisterPage]:emailRegisterForm 郵箱註冊處理函數
+  // @remote [RegisterPage]:emailRegisterForm 郵箱註冊處理函數
   const handleEmailRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
@@ -178,7 +178,7 @@ export default function RegisterPage() {
     }
   };
 
-  // @action [RegisterPage]:oauthRegisterButtons 第三方登入處理函數
+  // @remote [RegisterPage]:oauthRegisterButtons 第三方登入處理函數
   const handleOAuthRegister = async (
     provider: "google" | "facebook" | "line"
   ) => {
@@ -209,7 +209,7 @@ export default function RegisterPage() {
         </div>
       )}
 
-      {/* @ui [RegisterPage]:emailRegisterForm 郵箱註冊表單 - 使用 handleEmailRegister, validateForm, validateField */}
+      {/* @remote [RegisterPage]:emailRegisterForm 郵箱註冊表單 - 使用 handleEmailRegister, validateForm, validateField */}
       <form onSubmit={handleEmailRegister} className="space-y-6" noValidate>
           <div className="bg-white C3-lg shadow-md p-6 space-y-4">
             {/* 使用者名稱輸入欄位 - 使用 formData.username, validateField("username") */}
@@ -304,7 +304,7 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      {/* @ui [RegisterPage]:oauthRegisterButtons 第三方登入按鈕區塊 - 使用 handleOAuthRegister */}
+      {/* @remote [RegisterPage]:oauthRegisterButtons 第三方登入按鈕區塊 - 使用 handleOAuthRegister */}
       <div className="bg-white rounded-lg shadow-md p-6 space-y-3">
         {/* Google 註冊按鈕 */}
         <button

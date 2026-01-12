@@ -1,0 +1,131 @@
+version: "3.8"
+
+services:
+  # PostgreSQL 數據庫
+  postgres:
+    image: postgres:15-alpine
+    container_name: platform_postgres_dev
+    environment:
+      POSTGRES_DB: platform_db_dev
+      POSTGRES_USER: platform_user
+      POSTGRES_PASSWORD: platform_password
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - platform_network
+    restart: unless-stopped
+
+  # Redis 緩存和消息代理
+  redis:
+    image: redis:7-alpine
+    container_name: platform_redis_dev
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_dev_data:/data
+    ports:
+      - "6380:6379"
+    networks:
+      - platform_network
+    restart: unless-stopped
+
+  # FastAPI 應用程式 (開發模式)
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: platform_api_dev
+    environment:
+      DATABASE_URL: postgresql://platform_user:platform_password@postgres:5432/platform_db_dev
+      REDIS_URL: redis://redis:6379
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      ENV: development
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      API_RELOAD: true
+      SECRET_KEY: dev-secret-key
+      INTERNAL_TOKEN: dev-internal-token
+    ports:
+      - "8001:8000"
+    volumes:
+      - .:/app
+      - /app/__pycache__
+    networks:
+      - platform_network
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Celery Worker (開發模式)
+  celery-worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: platform_celery_worker_dev
+    command: celery -A app.tasks.celery_app worker --loglevel=debug --concurrency=2
+    environment:
+      DATABASE_URL: postgresql://platform_user:platform_password@postgres:5432/platform_db_dev
+      REDIS_URL: redis://redis:6379
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/1
+      ENV: development
+      SECRET_KEY: dev-secret-key
+      INTERNAL_TOKEN: dev-internal-token
+    volumes:
+      - .:/app
+      - /app/__pycache__
+    networks:
+      - platform_network
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  # Next.js 前端應用 (開發模式)
+  frontend:
+    image: node:20-alpine
+    container_name: platform_frontend_dev
+    working_dir: /app
+    environment:
+      NODE_ENV: development
+      NEXT_TELEMETRY_DISABLED: "1"
+      WATCHPACK_POLLING: "1"
+    command: sh -c "npm install && npm run dev -- --hostname 0.0.0.0"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../frontend:/app
+      - frontend_node_modules:/app/node_modules
+    networks:
+      - platform_network
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # MailHog 郵件測試服務 (開發 / 測試用，不影響正式環境)
+  # 固定使用 v1.0.1 版本以確保 UI 結構一致性
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: platform_mailhog_dev
+    ports:
+      - "1025:1025" # SMTP
+      - "8025:8025" # Web UI
+    networks:
+      - platform_network
+    restart: unless-stopped
+
+networks:
+  platform_network:
+    driver: bridge
+
+volumes:
+  postgres_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local
+  frontend_node_modules:
+    driver: local
