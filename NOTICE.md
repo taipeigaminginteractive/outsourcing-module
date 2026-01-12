@@ -2,16 +2,14 @@
 
 ## Repository Purpose
 
-This repository is publicly accessible for **authorized task-based collaboration,
-delivery, and review purposes only**.
+This repository is publicly accessible for **authorized task-based collaboration, delivery, and review purposes only**.
 
 It is **not** an open-source project and does **not** accept unsolicited contributions.
 
 本 Repository 以公開形式提供，
 僅用於 **經授權之任務型協作、交付與審查用途**。
 
-本專案 **並非開源專案**，
-且 **不接受任何未經授權的貢獻行為**。
+本專案 **並非開源專案**，且 **不接受任何未經授權的貢獻行為**。
 
 ---
 
