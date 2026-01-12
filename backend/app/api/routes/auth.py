@@ -40,7 +40,7 @@ FRONTEND_URL = settings.FRONTEND_URL
 EMAIL_VERIFICATION_EXPIRE_MINUTES = settings.EMAIL_VERIFICATION_EXPIRE_MINUTES # 24 小時 (信箱驗證)
 
 #===============================================
-# 註冊路由
+# 註冊相關 路由
 #===============================================
 
 @router.post("/register", response_model=user_schema.UserResponse)

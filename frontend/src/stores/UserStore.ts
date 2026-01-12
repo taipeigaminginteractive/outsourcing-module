@@ -9,21 +9,21 @@ import { IS_PRODUCTION } from "@/constants";
 
 interface UserState {
 
-  // @state ui 註冊進行中的 loading 狀態（用於輸入欄位和按鈕 disabled）
+  // @ui 註冊進行中的 loading 狀態（用於輸入欄位和按鈕 disabled）
   isRegistering: boolean;  
-  // @state ui 註冊失敗的錯誤訊息（用於錯誤訊息顯示區塊）
+  // @ui 註冊失敗的錯誤訊息（用於錯誤訊息顯示區塊）
   registerError: string | null;
 
-  // @action remote 封裝 authApi.register
+  // @remote 封裝 authApi.register
   register: (userData: AuthRegisterRequest) => Promise<void>;
 
-  // @action remote 封裝 authApi.redirectToOAuthLogin
+  // @remote 封裝 authApi.redirectToOAuthLogin
   redirectToOAuthLogin: (
     provider: "google" | "facebook" | "line",
     errorType?: "login" | "register"
   ) => Promise<void>;
 
-  // @action ui 清除 store層 錯誤訊息
+  // @ui 清除 store層 錯誤訊息
   clearError: () => void;
 
 }

@@ -20,16 +20,28 @@ wheels/
 .installed.cfg
 *.egg
 
+# environment
+.env*
+
+# LLM
+/LLM/
 
 # Virtual Environment
 .venv/
 backend/.venv/
 
 # scripts
-scripts/
+/scripts/
 
-# LLM
-LLM/
+# ssl certificates
+ssl/
+
+# uploaded files
+uploads/
+
+#log files
+logs/
+*.log
 
 # IDE
 .idea/
@@ -47,6 +59,8 @@ Thumbs.db
 htmlcov/
 *.pyc
 __pycache__/
+
+
 
 # claude
 .claude/
@@ -86,7 +100,6 @@ frontend/yarn-error.log*
 frontend/.pnpm-debug.log*
 
 ## env files (can opt-in for committing if needed)
-.env*
 frontend/.env*
 
 ## vercel
